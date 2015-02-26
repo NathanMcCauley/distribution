@@ -3,9 +3,13 @@ package health
 import (
   "net/http"
   "encoding/json"
+  "sync"
 )
 
-var statusKeys = make(map[string]HealthStatus)
+var (
+  mutex sync.RWMutex
+  statusKeys = make(map[string]HealthStatus)
+)
 
 type Status string
 const (
@@ -20,11 +24,15 @@ type HealthStatus struct {
 }
 
 func UpdateStatus(status HealthStatus) {
+  mutex.Lock()
+  defer mutex.Unlock()
   statusKeys[status.Name] = status
 }
 
 func CheckStatus() Status {
   warning := false
+  mutex.RLock()
+  defer mutex.RUnlock()
   for _, v := range statusKeys {
     switch v.CurrentStatus {
       case StatusError:
