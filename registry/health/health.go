@@ -9,9 +9,9 @@ var statusKeys = make(map[string]HealthStatus)
 
 type Status string
 const (
-  OK = "Ok"
-  WARNING = "Warning"
-  ERROR = "Error"
+  StatusOK = "StatusOK"
+  StatusWarning = "StatusWarning"
+  StatusError = "StatusError"
 )
 
 type HealthStatus struct {
@@ -23,21 +23,40 @@ func UpdateStatus(status HealthStatus) {
   statusKeys[status.Name] = status
 }
 
+func CheckStatus() Status {
+  warning := false
+  for _, v := range statusKeys {
+    switch v.CurrentStatus {
+      case StatusError:
+        return StatusError
+      case StatusWarning:
+        warning = true
+    }
+  }
+  if warning {
+    return StatusWarning
+  }
+  return StatusOK
+}
+
 func statusHandler(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("Content-Type", "application/json; charset=utf-8")
+  if CheckStatus() == StatusError {
+    w.WriteHeader(http.StatusInternalServerError)
+  }
   jsonResponse, _ := json.Marshal(statusKeys)
   w.Write(jsonResponse)
 }
 
 func downHandler(w http.ResponseWriter, r *http.Request) {
   if r.Method == "POST" {
-    UpdateStatus(HealthStatus{"manual_status", ERROR})
+    UpdateStatus(HealthStatus{"manual_status", StatusError})
   }
 }
 
 func upHandler(w http.ResponseWriter, r *http.Request) {
   if r.Method == "POST" {
-    UpdateStatus(HealthStatus{"manual_status", OK})
+    UpdateStatus(HealthStatus{"manual_status", StatusOK})
   }
 }
 
