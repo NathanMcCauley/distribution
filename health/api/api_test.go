@@ -1,7 +1,8 @@
 package api
 
 import (
-	"github.com/docker/distribution/registry/health"
+	"errors"
+	"github.com/docker/distribution/health"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -42,7 +43,7 @@ func TestGETUpHandlerDoesNotChangeStatus(t *testing.T) {
 }
 
 // TestPOSTUpHandlerChangeStatus ensures the endpoint /debug/health/up changes
-// the status of the check to StatusOK
+// the status code of the response to 200
 func TestPOSTUpHandlerChangeStatus(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
@@ -51,16 +52,24 @@ func TestPOSTUpHandlerChangeStatus(t *testing.T) {
 		t.Errorf("Failed to create request.")
 	}
 
-	health.UpdateStatus(health.HealthStatus{"manual_status", health.StatusError})
+	// Create a manual error
+	health.Register("manual_http_status", health.CheckFunc(func() error {
+		return errors.New("Manual Check")
+	}))
+
 	UpHandler(recorder, req)
 
-	if health.CheckStatus() != health.StatusOK {
-		t.Errorf("Did not get a StatusOK.")
+	if recorder.Code != 200 {
+		t.Errorf("Did not get a 200.")
+	}
+
+	if len(health.CheckStatus()) != 0 {
+		t.Errorf("UpHandler didn't remove the error check.")
 	}
 }
 
 // TestPOSTDownHandlerChangeStatus ensures the endpoint /debug/health/down changes
-// the status of the check to StatusError
+// the status code of the response to 500
 func TestPOSTDownHandlerChangeStatus(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
@@ -69,10 +78,13 @@ func TestPOSTDownHandlerChangeStatus(t *testing.T) {
 		t.Errorf("Failed to create request.")
 	}
 
-	health.UpdateStatus(health.HealthStatus{"manual_status", health.StatusOK})
 	DownHandler(recorder, req)
 
-	if health.CheckStatus() != health.StatusError {
-		t.Errorf("Did not get StatusError.")
+	if recorder.Code != 200 {
+		t.Errorf("Did not get a 200.")
+	}
+
+	if len(health.CheckStatus()) != 1 {
+		t.Errorf("DownHandler didn't add an error check.")
 	}
 }

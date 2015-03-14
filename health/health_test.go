@@ -1,6 +1,7 @@
 package health
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,27 +24,8 @@ func TestReturns200IfThereAreNoChecks(t *testing.T) {
 	}
 }
 
-// TestReturns200IfThereAreOkOrWarningChecks ensures that the result code of the
-// health endpoint is 200 if there are health checks with the StatusWarning code
-func TestReturns200IfThereAreOkOrWarningChecks(t *testing.T) {
-	recorder := httptest.NewRecorder()
-
-	req, err := http.NewRequest("GET", "https://fakeurl.com/debug/health", nil)
-	if err != nil {
-		t.Errorf("Failed to create request.")
-	}
-
-	UpdateStatus(HealthStatus{"WarningStatus", StatusWarning})
-	UpdateStatus(HealthStatus{"OKStatus", StatusOK})
-	StatusHandler(recorder, req)
-
-	if recorder.Code != 200 {
-		t.Errorf("Did not get a 200.")
-	}
-}
-
 // TestReturns500IfThereAreErrorChecks ensures that the result code of the
-// health endpoint is 500 if there are health checks with the StatusError code
+// health endpoint is 500 if there are health checks with errors
 func TestReturns500IfThereAreErrorChecks(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
@@ -52,9 +34,11 @@ func TestReturns500IfThereAreErrorChecks(t *testing.T) {
 		t.Errorf("Failed to create request.")
 	}
 
-	UpdateStatus(HealthStatus{"OKStatus", StatusOK})
-	UpdateStatus(HealthStatus{"WarningStatus", StatusWarning})
-	UpdateStatus(HealthStatus{"ErrorStatus", StatusError})
+	// Create a manual error
+	Register("some_check", CheckFunc(func() error {
+		return errors.New("This Check did not succeed")
+	}))
+
 	StatusHandler(recorder, req)
 
 	if recorder.Code != 500 {
