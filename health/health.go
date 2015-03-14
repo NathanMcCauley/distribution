@@ -22,7 +22,7 @@ type Checker interface {
 // the Checker interface
 type CheckFunc func() error
 
-// Implements the Checker interface to allow for any func() error method
+// Check Implements the Checker interface to allow for any func() error method
 // to be passed as a Checker
 func (cf CheckFunc) Check() error {
 	return cf()
@@ -99,7 +99,10 @@ func PeriodicChecker(check Checker, period time.Duration) Checker {
 func Register(name string, check Checker) {
 	mutex.RLock()
 	defer mutex.RUnlock()
-
+	_, ok := registeredChecks[name]
+	if ok {
+		panic("Check already exists: " + name)
+	}
 	registeredChecks[name] = check
 }
 
