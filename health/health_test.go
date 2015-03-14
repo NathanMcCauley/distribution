@@ -2,6 +2,7 @@ package health
 
 import (
 	"errors"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,9 +20,7 @@ func TestReturns200IfThereAreNoChecks(t *testing.T) {
 
 	StatusHandler(recorder, req)
 
-	if recorder.Code != 200 {
-		t.Errorf("Did not get a 200.")
-	}
+	assert.Equal(t, recorder.Code, 200, "Code should be 200")
 }
 
 // TestReturns500IfThereAreErrorChecks ensures that the result code of the
@@ -41,7 +40,5 @@ func TestReturns500IfThereAreErrorChecks(t *testing.T) {
 
 	StatusHandler(recorder, req)
 
-	if recorder.Code != 500 {
-		t.Errorf("Did not get a 500.")
-	}
+	assert.Equal(t, recorder.Code, 500, "Code should be 500")
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/docker/distribution/health"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,9 +20,7 @@ func TestGETDownHandlerDoesNotChangeStatus(t *testing.T) {
 
 	DownHandler(recorder, req)
 
-	if recorder.Code != 404 {
-		t.Errorf("Did not get a 404.")
-	}
+	assert.Equal(t, recorder.Code, 404, "Code should be 404")
 }
 
 // TestGETUpHandlerDoesNotChangeStatus ensures that calling the endpoint
@@ -36,9 +35,7 @@ func TestGETUpHandlerDoesNotChangeStatus(t *testing.T) {
 
 	DownHandler(recorder, req)
 
-	if recorder.Code != 404 {
-		t.Errorf("Did not get a 404.")
-	}
+	assert.Equal(t, recorder.Code, 404, "Code should be 404")
 }
 
 // TestPOSTDownHandlerChangeStatus ensures the endpoint /debug/health/down changes
@@ -54,13 +51,8 @@ func TestPOSTDownHandlerChangeStatus(t *testing.T) {
 
 	DownHandler(recorder, req)
 
-	if recorder.Code != 200 {
-		t.Errorf("Did not get a 200.")
-	}
-
-	if len(health.CheckStatus()) != 1 {
-		t.Errorf("DownHandler didn't add an error check.")
-	}
+	assert.Equal(t, recorder.Code, 200, "Code should be 200")
+	assert.Equal(t, len(health.CheckStatus()), 1, "Calling downhandler should make health.CheckStatus() return an error check")
 }
 
 // TestPOSTUpHandlerChangeStatus ensures the endpoint /debug/health/up changes
@@ -75,11 +67,6 @@ func TestPOSTUpHandlerChangeStatus(t *testing.T) {
 
 	UpHandler(recorder, req)
 
-	if recorder.Code != 200 {
-		t.Errorf("Did not get a 200.")
-	}
-
-	if len(health.CheckStatus()) != 0 {
-		t.Errorf("UpHandler didn't remove the error check.")
-	}
+	assert.Equal(t, recorder.Code, 200, "Code should be 200")
+	assert.Equal(t, len(health.CheckStatus()), 0, "Calling uphandler should make health.CheckStatus() return no error check")
 }
